@@ -1,52 +1,45 @@
-"use client"
+"use client";
 
-import { useCallback, useMemo } from "react"
-import { RotateCcw, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
+import { useCallback, useMemo } from "react";
+import { RotateCcw, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { DEFAULT_FILTER_STATE, SORT_OPTIONS } from "@/lib/constants"
-import {
-  getUniqueCategories,
-  getUniqueBrands,
-  getPriceRange,
-} from "@/features/products/utils"
-import type { FilterState, Product } from "@/features/products/types"
+} from "@/components/ui/select";
+import { DEFAULT_FILTER_STATE, SORT_OPTIONS } from "@/lib/constants";
+import { useProductMetadata } from "@/features/products/hooks/use-product-metadata";
+import type { FilterState } from "@/features/products/types";
 
 interface FilterPanelProps {
-  filters: FilterState
-  onFiltersChange: (filters: FilterState) => void
-  products: Product[]
+  filters: FilterState;
+  onFiltersChange: (filters: FilterState) => void;
 }
 
-export function FilterPanel({
-  filters,
-  onFiltersChange,
-  products,
-}: FilterPanelProps) {
-  const categories = useMemo(() => getUniqueCategories(products), [products])
-  const brands = useMemo(() => getUniqueBrands(products), [products])
-  const priceRange = useMemo(() => getPriceRange(products), [products])
+export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
+  const { metadata, isLoading } = useProductMetadata();
+
+  const categories = metadata?.categories || [];
+  const brands = metadata?.brands || [];
+  const priceRange = metadata?.priceRange || { min: 0, max: 10000 };
 
   const updateFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      onFiltersChange({ ...filters, [key]: value })
+      onFiltersChange({ ...filters, [key]: value });
     },
-    [filters, onFiltersChange]
-  )
+    [filters, onFiltersChange],
+  );
 
   const handleReset = useCallback(() => {
     onFiltersChange({
       ...DEFAULT_FILTER_STATE,
       maxPrice: priceRange.max,
-    })
-  }, [onFiltersChange, priceRange.max])
+    });
+  }, [onFiltersChange, priceRange.max]);
 
   return (
     <aside
@@ -54,7 +47,9 @@ export function FilterPanel({
       aria-label="Product filters"
     >
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-lg font-bold text-foreground">Filters</h2>
+        <h2 className="font-serif text-lg font-bold text-foreground">
+          Filters
+        </h2>
         <Button
           variant="ghost"
           size="sm"
@@ -68,12 +63,16 @@ export function FilterPanel({
 
       {/* Category */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-foreground" htmlFor="category-filter">
+        <label
+          className="text-sm font-medium text-foreground"
+          htmlFor="category-filter"
+        >
           Category
         </label>
         <Select
           value={filters.category || "all"}
           onValueChange={(v) => updateFilter("category", v === "all" ? "" : v)}
+          disabled={isLoading}
         >
           <SelectTrigger id="category-filter" className="rounded-xl">
             <SelectValue placeholder="All Categories" />
@@ -91,12 +90,16 @@ export function FilterPanel({
 
       {/* Brand */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-foreground" htmlFor="brand-filter">
+        <label
+          className="text-sm font-medium text-foreground"
+          htmlFor="brand-filter"
+        >
           Brand
         </label>
         <Select
           value={filters.brand || "all"}
           onValueChange={(v) => updateFilter("brand", v === "all" ? "" : v)}
+          disabled={isLoading}
         >
           <SelectTrigger id="brand-filter" className="rounded-xl">
             <SelectValue placeholder="All Brands" />
@@ -124,9 +127,10 @@ export function FilterPanel({
             step={1}
             value={[filters.minPrice, filters.maxPrice || priceRange.max]}
             onValueChange={([min, max]) => {
-              onFiltersChange({ ...filters, minPrice: min, maxPrice: max })
+              onFiltersChange({ ...filters, minPrice: min, maxPrice: max });
             }}
             aria-label="Price range"
+            disabled={isLoading}
           />
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -152,6 +156,7 @@ export function FilterPanel({
               }`}
               aria-label={`Minimum ${rating} stars`}
               aria-pressed={filters.minRating === rating}
+              disabled={isLoading}
             >
               {rating === 0 ? (
                 "All"
@@ -168,12 +173,18 @@ export function FilterPanel({
 
       {/* Sort */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-foreground" htmlFor="sort-filter">
+        <label
+          className="text-sm font-medium text-foreground"
+          htmlFor="sort-filter"
+        >
           Sort By
         </label>
         <Select
           value={filters.sortBy}
-          onValueChange={(v) => updateFilter("sortBy", v as FilterState["sortBy"])}
+          onValueChange={(v) =>
+            updateFilter("sortBy", v as FilterState["sortBy"])
+          }
+          disabled={isLoading}
         >
           <SelectTrigger id="sort-filter" className="rounded-xl">
             <SelectValue />
@@ -188,5 +199,5 @@ export function FilterPanel({
         </Select>
       </div>
     </aside>
-  )
+  );
 }
